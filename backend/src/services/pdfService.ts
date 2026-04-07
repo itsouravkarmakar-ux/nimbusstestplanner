@@ -1,5 +1,5 @@
 import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium-min';
+import chromium from '@sparticuz/chromium';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
@@ -10,20 +10,23 @@ const __dirname = path.dirname(__filename);
 
 /**
  * Launches a Chromium instance. 
- * Supports Vercel (Linux) and Local (Windows/Mac) environments.
+ * High-compatibility version for Vercel 2025 and Local Windows/Mac.
  */
 async function getBrowser() {
   const isProd = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
   
   try {
     if (isProd) {
-      console.log('[PDF] Initializing chromium for PRODUCTION (Vercel/Linux)...');
-      const CHROMIUM_PACK_URL = "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar";
-      const executablePath = await chromium.executablePath(CHROMIUM_PACK_URL);
+      console.log('[PDF] Initializing PRODUCTION chromium (Amazon Linux Support)...');
       
+      // Standard @sparticuz/chromium initialization
+      const executablePath = await chromium.executablePath();
+      
+      // Inject library path for shared dependencies
       const binDir = path.dirname(executablePath);
       process.env.LD_LIBRARY_PATH = binDir;
       
+      // Optimization flags
       return await puppeteer.launch({
         args: [
           ...chromium.args,
@@ -35,15 +38,12 @@ async function getBrowser() {
           '--no-zygote'
         ],
         defaultViewport: chromium.defaultViewport,
-        executablePath,
+        executablePath: executablePath,
         headless: chromium.headless,
       });
     } else {
-      console.log('[PDF] Initializing chromium for LOCAL development...');
+      console.log('[PDF] Initializing LOCAL development chromium...');
       
-      // Fallback for Windows/Mac: Try to find local Chrome, Edge or Brave
-      // On Windows, puppeteer-core needs a fixed path or regular 'puppeteer'
-      // Since we use 'puppeteer-core', we'll try common Windows paths
       const platform = os.platform();
       let localPath = '';
       
@@ -57,14 +57,15 @@ async function getBrowser() {
         localPath = paths.find(p => fs.existsSync(p)) || '';
       }
       
+      // Cast localPath to any or string to avoid 'exactOptionalPropertyTypes' lint error
       return await puppeteer.launch({
-        args: ['--no-sandbox'],
-        executablePath: localPath || undefined, // undefined will let puppeteer-core try to find it
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+        executablePath: (localPath || undefined) as any, 
         headless: true
       });
     }
   } catch (error) {
-    console.error('[PDF] FAILED TO LAUNCH BROWSER:', error);
+    console.error('[PDF] TOTAL BROWSER LAUNCH FAILURE:', error);
     throw error;
   }
 }
@@ -77,7 +78,7 @@ export async function initBrowser() {
 }
 
 /**
- * Helper to convert image to Base64 for 100% reliable embedding.
+ * Helper to convert image to Base64 (Serverless best practice).
  */
 function getBase64Image(filePath: string): string {
   try {
@@ -87,7 +88,7 @@ function getBase64Image(filePath: string): string {
       return `data:image/${extension};base64,${fileBuffer.toString('base64')}`;
     }
   } catch (e) {
-    console.error(`[PDF] Failed to Base64 encode image: ${filePath}`, e);
+    console.error(`[PDF] Failed to Base64 encode image: ${filePath}`);
   }
   return '';
 }
@@ -101,29 +102,29 @@ export async function generateProposalPDF(data: any): Promise<Buffer> {
   const tempHtmlPath = path.join(os.tmpdir(), `proposal_${Date.now()}.html`);
 
   try {
-    console.log('[PDF] Starting generation process...');
+    console.log('[PDF] Starting generation workflow...');
     browser = await getBrowser();
     page = await browser.newPage();
-    console.log('[PDF] New page opened successfully.');
+    console.log('[PDF] Browser instance ready.');
 
     page.setDefaultNavigationTimeout(30000);
     
     // Resolve template
     const templatePath = path.resolve(__dirname, '../templates/proposal_template.html');
     if (!fs.existsSync(templatePath)) {
-      throw new Error(`Template not found at: ${templatePath}`);
+      throw new Error(`Critical Template missing: ${templatePath}`);
     }
     
     let html = fs.readFileSync(templatePath, 'utf8');
 
-    // EMBED LOGO and BACKGROUND AS BASE64
+    // FORCE BASE64 LOGO (Avoids all Vercel filesystem complications)
     const logoPath = path.resolve(__dirname, '../templates/assets/logo.png');
     const logoBase64 = getBase64Image(logoPath);
     if (logoBase64) {
       html = html.replace(/src=["'][^"']*logo\.png["']/g, `src="${logoBase64}"`);
     }
 
-    // Replace other placeholders
+    // Standard Replacements
     html = html
       .replace(/{{clientName}}/g, data.clientName || '')
       .replace(/{{proposalRef}}/g, data.proposalRef || '')
@@ -133,7 +134,7 @@ export async function generateProposalPDF(data: any): Promise<Buffer> {
       .replace(/{{moduleTech}}/g, data.moduleTech || '')
       .replace(/{{completionTime}}/g, data.completionTime || '');
 
-    // BOM Rows
+    // Data Tables
     const bomRows = (data.bom || []).map((item: any) => `
       <tr>
         <td>${item.item || ''}</td>
@@ -143,7 +144,6 @@ export async function generateProposalPDF(data: any): Promise<Buffer> {
     `).join('');
     html = html.replace('{{bomRows}}', bomRows);
 
-    // Commercial Rows
     const commercialRows = (data.commercials || []).map((item: any) => `
       <tr>
         <td>${item.milestone || ''}</td>
@@ -153,24 +153,24 @@ export async function generateProposalPDF(data: any): Promise<Buffer> {
     `).join('');
     html = html.replace('{{commercialRows}}', commercialRows);
 
-    // Fallback basePath
+    // Fallback pathing for other potential assets
     html = html.replace(/{{basePath}}/g, pathToFileURL(path.resolve(__dirname, '../templates/assets')).href);
     
     fs.writeFileSync(tempHtmlPath, html);
     await page.goto(pathToFileURL(tempHtmlPath).href, { waitUntil: 'load' });
-    console.log('[PDF] Template loaded.');
+    console.log('[PDF] Template rendered in browser.');
 
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
       margin: { top: '0', right: '0', bottom: '0', left: '0' }
     });
-    console.log('[PDF] PDF generation complete.');
+    console.log('[PDF] Binary generation successful.');
 
     return Buffer.from(pdfBuffer);
 
   } catch (error) {
-    console.error('[PDF] GENERATION FAILED:', error);
+    console.error('[PDF] INTERNAL GENERATION ERROR:', error);
     throw error;
   } finally {
     if (page) await page.close().catch(() => {});
