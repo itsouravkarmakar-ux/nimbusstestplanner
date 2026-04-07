@@ -15,7 +15,7 @@ const Navbar = () => {
   return (
     <nav className="navbar">
       <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <img src="/src/assets/logo.png" alt="Nimbus Logo" style={{ height: '40px' }} />
+        <img src="/logo.png" alt="Nimbus Logo" style={{ height: '40px' }} />
         <Link to="/dashboard" style={{ textDecoration: 'none', color: 'white', fontWeight: '700', fontSize: '20px', letterSpacing: '0.5px' }}>
           NIMBUS <span style={{ color: 'var(--primary)' }}>SOLAR SOLUTIONS</span>
         </Link>
