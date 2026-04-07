@@ -1,5 +1,5 @@
 import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
+import chromium from '@sparticuz/chromium-min';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
@@ -10,13 +10,18 @@ const __dirname = path.dirname(__filename);
 
 /**
  * Launches a Chromium instance compatible with Vercel serverless environment.
+ * Uses a remote binary pack to avoid missing libnss3 system libraries.
  */
 async function getBrowser() {
-  console.log('[PDF] Initializing chromium launch...');
+  console.log('[PDF] Initializing chromium launch (REMOTE PACK)...');
   
   try {
-    const executablePath = await chromium.executablePath();
-    console.log('[PDF] Chromium executable path resolved.');
+    // This specific version of the pack includes the necessary shared libraries 
+    // and is highly compatible with the current Vercel Amazon Linux environment.
+    const CHROMIUM_PACK_URL = "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar";
+    
+    const executablePath = await chromium.executablePath(CHROMIUM_PACK_URL);
+    console.log('[PDF] Remote Chromium executable path resolved.');
     
     return await puppeteer.launch({
       args: chromium.args,
@@ -25,7 +30,7 @@ async function getBrowser() {
       headless: chromium.headless,
     });
   } catch (error) {
-    console.error('[PDF] FAILED TO LAUNCH BROWSER:', error);
+    console.error('[PDF] FAILED TO LAUNCH BROWSER WITH REMOTE PACK:', error);
     throw error;
   }
 }
@@ -58,7 +63,7 @@ export async function generateProposalPDF(data: any): Promise<Buffer> {
     console.log(`[PDF] Reading template from: ${templatePath}`);
     
     if (!fs.existsSync(templatePath)) {
-      throw new Error(`Template not found at: ${templatePath}. Contents of templates folder: ${fs.readdirSync(path.dirname(templatePath)).join(', ')}`);
+      throw new Error(`Template not found at: ${templatePath}.`);
     }
     
     let html = fs.readFileSync(templatePath, 'utf8');
