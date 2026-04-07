@@ -24,9 +24,8 @@ const dummyData = {
 };
 
 async function run() {
-  const outputPath = path.join(__dirname, '../test_proposal.pdf');
-  await generateProposalPDF(dummyData, outputPath);
-  console.log(`Generated test PDF at: ${outputPath}`);
+  await generateProposalPDF(dummyData);
+  console.log(`Successfully generated PDF Buffer in memory.`);
 }
 
 run();
