@@ -10,27 +10,37 @@ const __dirname = path.dirname(__filename);
 
 /**
  * Launches a Chromium instance compatible with Vercel serverless environment.
- * Uses a remote binary pack to avoid missing libnss3 system libraries.
+ * Injects LD_LIBRARY_PATH so system libraries like libnss3.so can be found.
  */
 async function getBrowser() {
-  console.log('[PDF] Initializing chromium launch (REMOTE PACK)...');
+  console.log('[PDF] Initializing chromium launch (PATH INJECTION)...');
   
   try {
-    // This specific version of the pack includes the necessary shared libraries 
-    // and is highly compatible with the current Vercel Amazon Linux environment.
     const CHROMIUM_PACK_URL = "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar";
     
+    // Resolve the executable path
     const executablePath = await chromium.executablePath(CHROMIUM_PACK_URL);
-    console.log('[PDF] Remote Chromium executable path resolved.');
+    
+    // CRITICAL: Point the system to where the chromium libraries are extracted
+    // This resolves the "libnss3.so not found" error
+    const binDir = path.dirname(executablePath);
+    process.env.LD_LIBRARY_PATH = binDir;
+    console.log(`[PDF] Injected LD_LIBRARY_PATH: ${binDir}`);
     
     return await puppeteer.launch({
-      args: chromium.args,
+      args: [
+        ...chromium.args,
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu'
+      ],
       defaultViewport: chromium.defaultViewport,
       executablePath,
       headless: chromium.headless,
     });
   } catch (error) {
-    console.error('[PDF] FAILED TO LAUNCH BROWSER WITH REMOTE PACK:', error);
+    console.error('[PDF] FAILED TO LAUNCH BROWSER:', error);
     throw error;
   }
 }
@@ -54,21 +64,19 @@ export async function generateProposalPDF(data: any): Promise<Buffer> {
     console.log('[PDF] Starting generation process...');
     browser = await getBrowser();
     page = await browser.newPage();
-    console.log('[PDF] New page opened.');
+    console.log('[PDF] New page opened successfully.');
 
     page.setDefaultNavigationTimeout(30000);
     
-    // Find the template
+    // Resolve template
     const templatePath = path.resolve(__dirname, '../templates/proposal_template.html');
-    console.log(`[PDF] Reading template from: ${templatePath}`);
-    
     if (!fs.existsSync(templatePath)) {
-      throw new Error(`Template not found at: ${templatePath}.`);
+      throw new Error(`Template not found at: ${templatePath}`);
     }
     
     let html = fs.readFileSync(templatePath, 'utf8');
 
-    // Replace placeholders
+    // Basic placeholder replacement
     html = html
       .replace(/{{clientName}}/g, data.clientName || '')
       .replace(/{{proposalRef}}/g, data.proposalRef || '')
@@ -78,7 +86,7 @@ export async function generateProposalPDF(data: any): Promise<Buffer> {
       .replace(/{{moduleTech}}/g, data.moduleTech || '')
       .replace(/{{completionTime}}/g, data.completionTime || '');
 
-    // BOM and Commercials
+    // BOM Rows
     const bomRows = (data.bom || []).map((item: any) => `
       <tr>
         <td>${item.item || ''}</td>
@@ -88,6 +96,7 @@ export async function generateProposalPDF(data: any): Promise<Buffer> {
     `).join('');
     html = html.replace('{{bomRows}}', bomRows);
 
+    // Commercial Rows
     const commercialRows = (data.commercials || []).map((item: any) => `
       <tr>
         <td>${item.milestone || ''}</td>
@@ -97,27 +106,25 @@ export async function generateProposalPDF(data: any): Promise<Buffer> {
     `).join('');
     html = html.replace('{{commercialRows}}', commercialRows);
 
-    // Resolve asset path
+    // Assets
     const assetsPath = path.resolve(__dirname, '../templates/assets');
     html = html.replace(/{{basePath}}/g, pathToFileURL(assetsPath).href);
     
     fs.writeFileSync(tempHtmlPath, html);
-    console.log(`[PDF] Temporary HTML written to: ${tempHtmlPath}`);
-
     await page.goto(pathToFileURL(tempHtmlPath).href, { waitUntil: 'load' });
-    console.log('[PDF] Page loaded.');
+    console.log('[PDF] Template loaded in browser.');
 
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
       margin: { top: '0', right: '0', bottom: '0', left: '0' }
     });
-    console.log('[PDF] PDF Buffer generated successfully.');
+    console.log('[PDF] Buffer created.');
 
     return Buffer.from(pdfBuffer);
 
   } catch (error) {
-    console.error('[PDF] FATAL ERROR during generation:', error);
+    console.error('[PDF] GENERATION FAILED:', error);
     throw error;
   } finally {
     if (page) await page.close().catch(() => {});
