@@ -32,6 +32,9 @@ app.use(express.json());
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'ok', environment: process.env.NODE_ENV, vercel: !!process.env.VERCEL });
+});
 app.use('/api/auth', authRoutes);
 app.use('/api/proposals', proposalRoutes);
 
@@ -46,10 +49,13 @@ mongoose.connect(MONGODB_URI)
     // We keep the server running so we can see the errors on requests
   });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on http://localhost:${PORT}`);
-  // Pre-warm the PDF browser
-  initBrowser();
-});
+// ONLY run the server manually if NOT in production (Vercel)
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Server is running on http://localhost:${PORT}`);
+    // Pre-warm the PDF browser in development
+    initBrowser();
+  });
+}
 
 export default app;

@@ -26,6 +26,7 @@ router.post('/register', async (req: Request, res: Response): Promise<void> => {
 
 // Login Admin
 router.post('/login', async (req: Request, res: Response): Promise<void> => {
+  console.log(`[DEBUG] Login attempt received for: ${req.body?.username}`);
   try {
     const { username, password } = req.body;
     const user = await User.findOne({ username });
