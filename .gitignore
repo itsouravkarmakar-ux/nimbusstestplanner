@@ -1,0 +1,40 @@
+# Dependency directories
+node_modules/
+frontend/node_modules/
+backend/node_modules/
+
+# Build artifacts
+dist/
+build/
+frontend/dist/
+backend/dist/
+
+# Environment files
+.env
+backend/.env
+
+# Large PDF files (templates)
+*.pdf
+template.pdf
+template_new.pdf
+backend/test*.pdf
+backend/test_proposal.pdf
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+backend/error.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Local data
+backend/uploads/

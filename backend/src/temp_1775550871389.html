@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <style>
+    @font-face {
+      font-family: 'Montserrat';
+      src: url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;600;700&display=swap');
+    }
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Montserrat', sans-serif;
+    }
+    .page {
+      width: 210mm;
+      height: 297mm;
+      position: relative;
+      page-break-after: always;
+      background-size: 210mm 297mm;
+      background-repeat: no-repeat;
+    }
+    .abs {
+      position: absolute;
+    }
+    .text-content {
+      font-size: 11.5px;
+      color: #1a3a5a; /* Matching document dark blue */
+      font-weight: 600;
+      background-color: white;
+      padding: 0px 4px;
+    }
+    .footer-text {
+      font-size: 11px;
+      color: #004aad; /* Professional Blue */
+      font-weight: 700;
+      background-color: white;
+      padding: 3px 6px; /* Increased padding to erase background better */
+    }
+    .white-box {
+      background-color: white;
+      padding: 2px 4px;
+    }
+    .cover-text {
+      font-size: 18px;
+    }
+    .bom-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      background: white;
+    }
+    .bom-table td { padding: 8px 10px; border: 1px solid #ccc; background: white; height: 35.5px; }
+    
+    /* Page 7 Commercials */
+    .comm-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 14px;
+      background: white;
+    }
+    .comm-table td { padding: 12px; border: 1px solid #ccc; background: white; }
+  </style>
+</head>
+<body>
+  <!-- Page 1 -->
+  <div class="page" id="p1" style="background-image: url('./templates/assets/page1.png');">
+    <div class="abs text-content" style="left: 9%; top: 9%; font-size: 18px; width: 60%; font-weight: 700;">yyyy</div>
+    <div class="abs footer-text" style="left: 9%; top: 93.0%; width: 35%; text-align: left;">Proposal Ref No.: NSS/26-27/4063/01</div>
+    <div class="abs footer-text" style="left: 77%; top: 93.0%; width: 20%; text-align: right;">Dated: 7/4/2026</div>
+  </div>
+
+  <!-- Page 2 -->
+  <div class="page" id="p2" style="background-image: url('./templates/assets/page2.png');">
+    <div class="abs" style="left: 17.5%; top: 36.5%; width: 73.5%; background: white;">
+      <div style="margin-bottom: 5px;"><strong style="color: #1a3a5a; font-size: 13px;">Site Location :</strong> <span class="text-content" style="font-size: 13px;">kk</span></div>
+      <div style="margin-bottom: 5px;"><strong style="color: #1a3a5a; font-size: 13px;">Capacity :</strong> <span class="text-content" style="font-size: 13px;">44 KWp</span></div>
+      <div style="margin-bottom: 5px;"><strong style="color: #1a3a5a; font-size: 13px;">Estimated Completion Time :</strong> <span class="text-content" style="font-size: 13px;">60 Days</span></div>
+    </div>
+    <div class="abs footer-text" style="left: 9%; top: 93.0%; width: 35%; text-align: left;">Proposal Ref No.: NSS/26-27/4063/01</div>
+    <div class="abs footer-text" style="left: 77%; top: 93.0%; width: 20%; text-align: right;">Dated: 7/4/2026</div>
+  </div>
+
+  <!-- Page 3 -->
+  <div class="page" id="p3" style="background-image: url('./templates/assets/page3.png');">
+    <div class="abs footer-text" style="left: 9%; top: 93.0%; width: 35%; text-align: left;">Proposal Ref No.: NSS/26-27/4063/01</div>
+    <div class="abs footer-text" style="left: 77%; top: 93.0%; width: 20%; text-align: right;">Dated: 7/4/2026</div>
+  </div>
+
+  <!-- Page 4 -->
+  <div class="page" id="p4" style="background-image: url('./templates/assets/page4.png');">
+     <div class="abs" style="left: 9%; top: 11.2%; width: 82.2%;">
+       <table class="bom-table">
+         <tbody>
+           
+      <tr>
+        <td>Solar PV Modules</td>
+        <td>Mono-crystalline Topcon</td>
+        <td>2200 Nos</td>
+      </tr>
+    
+      <tr>
+        <td>Grid Tied Inverters</td>
+        <td>100/110/125 KW</td>
+        <td>10 Sets</td>
+      </tr>
+    
+         </tbody>
+       </table>
+     </div>
+    <div class="abs footer-text" style="left: 9%; top: 93.0%; width: 35%; text-align: left;">Proposal Ref No.: NSS/26-27/4063/01</div>
+    <div class="abs footer-text" style="left: 77%; top: 93.0%; width: 20%; text-align: right;">Dated: 7/4/2026</div>
+  </div>
+
+  <!-- Page 5 -->
+  <div class="page" id="p5" style="background-image: url('./templates/assets/page5.png');">
+    <div class="abs footer-text" style="left: 9%; top: 93.0%; width: 35%; text-align: left;">Proposal Ref No.: NSS/26-27/4063/01</div>
+    <div class="abs footer-text" style="left: 77%; top: 93.0%; width: 20%; text-align: right;">Dated: 7/4/2026</div>
+  </div>
+
+  <!-- Page 6 -->
+  <div class="page" id="p6" style="background-image: url('./templates/assets/page6.png');">
+    <div class="abs footer-text" style="left: 9%; top: 93.0%; width: 35%; text-align: left;">Proposal Ref No.: NSS/26-27/4063/01</div>
+    <div class="abs footer-text" style="left: 77%; top: 93.0%; width: 20%; text-align: right;">Dated: 7/4/2026</div>
+  </div>
+
+  <!-- Page 7 -->
+  <div class="page" id="p7" style="background-image: url('./templates/assets/page7.png');">
+     <div class="abs" style="left: 17.5%; top: 21%; width: 73.5%; background: white;">
+       <table class="comm-table">
+         <tbody>
+           
+      <tr>
+        <td>Advance</td>
+        <td>10%</td>
+        <td>Against order confirmation</td>
+      </tr>
+    
+      <tr>
+        <td>Delivery</td>
+        <td>30%</td>
+        <td>Against delivery of panels</td>
+      </tr>
+    
+      <tr>
+        <td>Installation</td>
+        <td>50%</td>
+        <td>During installation phase</td>
+      </tr>
+    
+      <tr>
+        <td>Final</td>
+        <td>10%</td>
+        <td>After commissioning</td>
+      </tr>
+    
+         </tbody>
+       </table>
+     </div>
+    <div class="abs footer-text" style="left: 9%; top: 93.0%; width: 35%; text-align: left;">Proposal Ref No.: NSS/26-27/4063/01</div>
+    <div class="abs footer-text" style="left: 77%; top: 93.0%; width: 20%; text-align: right;">Dated: 7/4/2026</div>
+  </div>
+
+  <!-- Remaining Pages -->
+  <div class="page" id="p8" style="background-image: url('./templates/assets/page8.png');">
+    <div class="abs footer-text" style="left: 9%; top: 93.0%; width: 35%; text-align: left;">Proposal Ref No.: NSS/26-27/4063/01</div>
+    <div class="abs footer-text" style="left: 77%; top: 93.0%; width: 20%; text-align: right;">Dated: 7/4/2026</div>
+  </div>
+  <div class="page" id="p9" style="background-image: url('./templates/assets/page9.png');">
+    <div class="abs footer-text" style="left: 9%; top: 93.0%; width: 35%; text-align: left;">Proposal Ref No.: NSS/26-27/4063/01</div>
+    <div class="abs footer-text" style="left: 77%; top: 93.0%; width: 20%; text-align: right;">Dated: 7/4/2026</div>
+  </div>
+  <div class="page" id="p10" style="background-image: url('./templates/assets/page10.png');">
+    <div class="abs footer-text" style="left: 9%; top: 93.0%; width: 35%; text-align: left;">Proposal Ref No.: NSS/26-27/4063/01</div>
+    <div class="abs footer-text" style="left: 77%; top: 93.0%; width: 20%; text-align: right;">Dated: 7/4/2026</div>
+  </div>
+  <div class="page" id="p11" style="background-image: url('./templates/assets/page11.png');">
+    <div class="abs footer-text" style="left: 9%; top: 93.0%; width: 35%; text-align: left;">Proposal Ref No.: NSS/26-27/4063/01</div>
+    <div class="abs footer-text" style="left: 77%; top: 93.0%; width: 20%; text-align: right;">Dated: 7/4/2026</div>
+  </div>
+  <div class="page" id="p12" style="background-image: url('./templates/assets/page12.png');">
+    <div class="abs footer-text" style="left: 9%; top: 93.0%; width: 35%; text-align: left;">Proposal Ref No.: NSS/26-27/4063/01</div>
+    <div class="abs footer-text" style="left: 77%; top: 93.0%; width: 20%; text-align: right;">Dated: 7/4/2026</div>
+  </div>
+  <div class="page" id="p13" style="background-image: url('./templates/assets/page13.png');">
+    <div class="abs footer-text" style="left: 9%; top: 93.0%; width: 35%; text-align: left;">Proposal Ref No.: NSS/26-27/4063/01</div>
+    <div class="abs footer-text" style="left: 77%; top: 93.0%; width: 20%; text-align: right;">Dated: 7/4/2026</div>
+  </div>
+  <div class="page" id="p14" style="background-image: url('./templates/assets/page14.png');">
+    <div class="abs footer-text" style="left: 9%; top: 93.0%; width: 35%; text-align: left;">Proposal Ref No.: NSS/26-27/4063/01</div>
+    <div class="abs footer-text" style="left: 77%; top: 93.0%; width: 20%; text-align: right;">Dated: 7/4/2026</div>
+  </div>
+  <div class="page" id="p15" style="background-image: url('./templates/assets/page15.png');">
+    <div class="abs footer-text" style="left: 9%; top: 93.0%; width: 35%; text-align: left;">Proposal Ref No.: NSS/26-27/4063/01</div>
+    <div class="abs footer-text" style="left: 77%; top: 93.0%; width: 20%; text-align: right;">Dated: 7/4/2026</div>
+  </div>
+  <div class="page" id="p16" style="background-image: url('./templates/assets/page16.png');">
+    <div class="abs footer-text" style="left: 9%; top: 93.0%; width: 35%; text-align: left;">Proposal Ref No.: NSS/26-27/4063/01</div>
+    <div class="abs footer-text" style="left: 77%; top: 93.0%; width: 20%; text-align: right;">Dated: 7/4/2026</div>
+  </div>
+</body>
+</html>

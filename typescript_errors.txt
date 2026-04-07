@@ -1,0 +1,18 @@
+backend/src/index.ts(5,24): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './routes/auth.js'?
+backend/src/index.ts(6,28): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './routes/proposals.js'?
+backend/src/models/User.ts(18,44): error TS2349: This expression is not callable.
+  Type 'SaveOptions' has no call signatures.
+backend/src/models/User.ts(20,3): error TS2349: This expression is not callable.
+  Type 'SaveOptions' has no call signatures.
+backend/src/routes/auth.ts(3,18): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../models/User.js'?
+backend/src/routes/proposals.ts(2,22): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../models/Proposal.js'?
+backend/src/routes/proposals.ts(3,37): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean '../services/pdfService.js'?
+backend/src/test_pdf.ts(1,37): error TS5097: An import path can only end with a '.ts' extension when 'allowImportingTsExtensions' is enabled.
+frontend/src/App.tsx(3,19): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './pages/Login.js'?
+frontend/src/App.tsx(4,22): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './pages/Register.js'?
+frontend/src/App.tsx(5,23): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './pages/Dashboard.js'?
+frontend/src/App.tsx(6,26): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './pages/ProposalForm.js'?
+frontend/src/App.tsx(7,27): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './pages/ResetPassword.js'?
+frontend/src/App.tsx(8,20): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './components/Navbar.js'?
+frontend/src/main.tsx(3,17): error TS2835: Relative import paths need explicit file extensions in ECMAScript imports when '--moduleResolution' is 'node16' or 'nodenext'. Did you mean './App.js'?
+frontend/src/main.tsx(4,8): error TS2882: Cannot find module or type declarations for side-effect import of './index.css'.

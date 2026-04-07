@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+  body { font-family: sans-serif; background: #eee;}
+  .img-container {
+    position: relative;
+    width: 600px;
+    margin: 20px auto;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+  }
+  img { width: 100%; display: block; }
+  .grid {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    background-size: 10% 10%;
+    background-image: 
+      linear-gradient(to right, rgba(255,0,0,0.3) 1px, transparent 1px),
+      linear-gradient(to bottom, rgba(255,0,0,0.3) 1px, transparent 1px);
+  }
+  .labels-x, .labels-y { position: absolute; pointer-events: none; }
+  .labels-x { top: 0; left: 0; right: 0; display: flex; justify-content: space-between; }
+  .labels-y { top: 0; left: 0; bottom: 0; display: flex; flex-direction: column; justify-content: space-between; }
+  .label { font-size: 10px; color: red; background: rgba(255,255,255,0.7); }
+</style>
+<script>
+  function addGrid(container) {
+    const grid = document.createElement('div');
+    grid.className = 'grid';
+    container.appendChild(grid);
+    
+    // x labels
+    const lx = document.createElement('div'); lx.className = 'labels-x';
+    for(let i=0; i<=10; i++) { const l=document.createElement('div'); l.className='label'; l.innerText=i*10; lx.appendChild(l); }
+    container.appendChild(lx);
+    
+    // y labels
+    const ly = document.createElement('div'); ly.className = 'labels-y';
+    for(let i=0; i<=10; i++) { const l=document.createElement('div'); l.className='label'; l.innerText=i*10; ly.appendChild(l); }
+    container.appendChild(ly);
+  }
+  window.onload = () => {
+    document.querySelectorAll('.img-container').forEach(addGrid);
+  }
+</script>
+</head>
+<body>
+  <div class="img-container"><img src="file:///C:/Users/sskvs/OneDrive/Documents/NimbussSolarPlanner/backend/src/templates/assets/page1.png"></div>
+  <div class="img-container"><img src="file:///C:/Users/sskvs/OneDrive/Documents/NimbussSolarPlanner/backend/src/templates/assets/page2.png"></div>
+  <div class="img-container"><img src="file:///C:/Users/sskvs/OneDrive/Documents/NimbussSolarPlanner/backend/src/templates/assets/page3.png"></div>
+  <div class="img-container"><img src="file:///C:/Users/sskvs/OneDrive/Documents/NimbussSolarPlanner/backend/src/templates/assets/page4.png"></div>
+  <div class="img-container"><img src="file:///C:/Users/sskvs/OneDrive/Documents/NimbussSolarPlanner/backend/src/templates/assets/page7.png"></div>
+</body>
+</html>

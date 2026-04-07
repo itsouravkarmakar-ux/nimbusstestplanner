@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    // pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+  </script>
+</head>
+<body style="margin:0; padding:0; background:white;">
+  <canvas id="pdf-canvas"></canvas>
+  <script>
+    window.renderPage = async (pdfUrl, pageNum) => {
+      const loadingTask = pdfjsLib.getDocument(pdfUrl);
+      const pdf = await loadingTask.promise;
+      window.totalPages = pdf.numPages;
+      const page = await pdf.getPage(pageNum);
+      
+      const scale = 1.5; // Optimized resolution
+      const viewport = page.getViewport({ scale: scale });
+      
+      const canvas = document.getElementById('pdf-canvas');
+      const context = canvas.getContext('2d');
+      canvas.height = viewport.height;
+      canvas.width = viewport.width;
+      
+      const renderContext = {
+        canvasContext: context,
+        viewport: viewport
+      };
+      await page.render(renderContext).promise;
+      return pdf.numPages;
+    };
+  </script>
+</body>
+</html>
