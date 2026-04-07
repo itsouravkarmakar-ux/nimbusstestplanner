@@ -10,10 +10,11 @@ const __dirname = path.dirname(__filename);
 
 /**
  * Launches a Chromium instance compatible with Vercel serverless environment.
+ * Uses Single-Process mode and No-Zygote to bypass system library requirements.
  * Injects LD_LIBRARY_PATH so system libraries like libnss3.so can be found.
  */
 async function getBrowser() {
-  console.log('[PDF] Initializing chromium launch (PATH INJECTION)...');
+  console.log('[PDF] Initializing chromium launch (SINGLE-PROCESS + ZYGOTE-LESS)...');
   
   try {
     const CHROMIUM_PACK_URL = "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar";
@@ -21,11 +22,10 @@ async function getBrowser() {
     // Resolve the executable path
     const executablePath = await chromium.executablePath(CHROMIUM_PACK_URL);
     
-    // CRITICAL: Point the system to where the chromium libraries are extracted
-    // This resolves the "libnss3.so not found" error
+    // Point the system to where the chromium libraries are extracted
     const binDir = path.dirname(executablePath);
     process.env.LD_LIBRARY_PATH = binDir;
-    console.log(`[PDF] Injected LD_LIBRARY_PATH: ${binDir}`);
+    console.log(`[PDF] Vercel environment path injected: ${binDir}`);
     
     return await puppeteer.launch({
       args: [
@@ -33,14 +33,16 @@ async function getBrowser() {
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--disable-gpu'
+        '--disable-gpu',
+        '--single-process', // Bypass many library threading requirements
+        '--no-zygote'       // Stop extra process initialization
       ],
       defaultViewport: chromium.defaultViewport,
       executablePath,
       headless: chromium.headless,
     });
   } catch (error) {
-    console.error('[PDF] FAILED TO LAUNCH BROWSER:', error);
+    console.error('[PDF] FAILED TO LAUNCH BROWSER IN SERVERLESS MODE:', error);
     throw error;
   }
 }
@@ -50,6 +52,22 @@ async function getBrowser() {
  */
 export async function initBrowser() {
   return Promise.resolve();
+}
+
+/**
+ * Helper to convert image to Base64 for 100% reliable serverless embedding.
+ */
+function getBase64Image(filePath: string): string {
+  try {
+    if (fs.existsSync(filePath)) {
+      const fileBuffer = fs.readFileSync(filePath);
+      const extension = path.extname(filePath).replace('.', '');
+      return `data:image/${extension};base64,${fileBuffer.toString('base64')}`;
+    }
+  } catch (e) {
+    console.error(`[PDF] Failed to Base64 encode image: ${filePath}`, e);
+  }
+  return '';
 }
 
 /**
@@ -64,7 +82,7 @@ export async function generateProposalPDF(data: any): Promise<Buffer> {
     console.log('[PDF] Starting generation process...');
     browser = await getBrowser();
     page = await browser.newPage();
-    console.log('[PDF] New page opened successfully.');
+    console.log('[PDF] Page successfully opened in serverless browser.');
 
     page.setDefaultNavigationTimeout(30000);
     
@@ -76,7 +94,15 @@ export async function generateProposalPDF(data: any): Promise<Buffer> {
     
     let html = fs.readFileSync(templatePath, 'utf8');
 
-    // Basic placeholder replacement
+    // EMBED LOGO and BACKGROUND AS BASE64 (Removes filesystem dependency)
+    const logoPath = path.resolve(__dirname, '../templates/assets/logo.png');
+    const logoBase64 = getBase64Image(logoPath);
+    if (logoBase64) {
+      // Look for any image tags with the logo placeholder
+      html = html.replace(/src=["'][^"']*logo\.png["']/g, `src="${logoBase64}"`);
+    }
+
+    // Replace other placeholders
     html = html
       .replace(/{{clientName}}/g, data.clientName || '')
       .replace(/{{proposalRef}}/g, data.proposalRef || '')
@@ -106,25 +132,24 @@ export async function generateProposalPDF(data: any): Promise<Buffer> {
     `).join('');
     html = html.replace('{{commercialRows}}', commercialRows);
 
-    // Assets
-    const assetsPath = path.resolve(__dirname, '../templates/assets');
-    html = html.replace(/{{basePath}}/g, pathToFileURL(assetsPath).href);
+    // Fallback basePath for any other relative assets
+    html = html.replace(/{{basePath}}/g, pathToFileURL(path.resolve(__dirname, '../templates/assets')).href);
     
     fs.writeFileSync(tempHtmlPath, html);
     await page.goto(pathToFileURL(tempHtmlPath).href, { waitUntil: 'load' });
-    console.log('[PDF] Template loaded in browser.');
+    console.log('[PDF] Proposal HTML loaded.');
 
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
       margin: { top: '0', right: '0', bottom: '0', left: '0' }
     });
-    console.log('[PDF] Buffer created.');
+    console.log('[PDF] Binary PDF Buffer generated.');
 
     return Buffer.from(pdfBuffer);
 
   } catch (error) {
-    console.error('[PDF] GENERATION FAILED:', error);
+    console.error('[PDF] GENERATION PROCESS FAILED:', error);
     throw error;
   } finally {
     if (page) await page.close().catch(() => {});
