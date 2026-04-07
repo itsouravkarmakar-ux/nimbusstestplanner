@@ -9,40 +9,62 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 /**
- * Launches a Chromium instance compatible with Vercel serverless environment.
- * Uses Single-Process mode and No-Zygote to bypass system library requirements.
- * Injects LD_LIBRARY_PATH so system libraries like libnss3.so can be found.
+ * Launches a Chromium instance. 
+ * Supports Vercel (Linux) and Local (Windows/Mac) environments.
  */
 async function getBrowser() {
-  console.log('[PDF] Initializing chromium launch (SINGLE-PROCESS + ZYGOTE-LESS)...');
+  const isProd = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
   
   try {
-    const CHROMIUM_PACK_URL = "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar";
-    
-    // Resolve the executable path
-    const executablePath = await chromium.executablePath(CHROMIUM_PACK_URL);
-    
-    // Point the system to where the chromium libraries are extracted
-    const binDir = path.dirname(executablePath);
-    process.env.LD_LIBRARY_PATH = binDir;
-    console.log(`[PDF] Vercel environment path injected: ${binDir}`);
-    
-    return await puppeteer.launch({
-      args: [
-        ...chromium.args,
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--single-process', // Bypass many library threading requirements
-        '--no-zygote'       // Stop extra process initialization
-      ],
-      defaultViewport: chromium.defaultViewport,
-      executablePath,
-      headless: chromium.headless,
-    });
+    if (isProd) {
+      console.log('[PDF] Initializing chromium for PRODUCTION (Vercel/Linux)...');
+      const CHROMIUM_PACK_URL = "https://github.com/Sparticuz/chromium/releases/download/v131.0.1/chromium-v131.0.1-pack.tar";
+      const executablePath = await chromium.executablePath(CHROMIUM_PACK_URL);
+      
+      const binDir = path.dirname(executablePath);
+      process.env.LD_LIBRARY_PATH = binDir;
+      
+      return await puppeteer.launch({
+        args: [
+          ...chromium.args,
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage',
+          '--disable-gpu',
+          '--single-process',
+          '--no-zygote'
+        ],
+        defaultViewport: chromium.defaultViewport,
+        executablePath,
+        headless: chromium.headless,
+      });
+    } else {
+      console.log('[PDF] Initializing chromium for LOCAL development...');
+      
+      // Fallback for Windows/Mac: Try to find local Chrome, Edge or Brave
+      // On Windows, puppeteer-core needs a fixed path or regular 'puppeteer'
+      // Since we use 'puppeteer-core', we'll try common Windows paths
+      const platform = os.platform();
+      let localPath = '';
+      
+      if (platform === 'win32') {
+        const paths = [
+          'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+          'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+          'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe',
+          'C:\\Program Files\\Microsoft\\Edge\\Application\\msedge.exe'
+        ];
+        localPath = paths.find(p => fs.existsSync(p)) || '';
+      }
+      
+      return await puppeteer.launch({
+        args: ['--no-sandbox'],
+        executablePath: localPath || undefined, // undefined will let puppeteer-core try to find it
+        headless: true
+      });
+    }
   } catch (error) {
-    console.error('[PDF] FAILED TO LAUNCH BROWSER IN SERVERLESS MODE:', error);
+    console.error('[PDF] FAILED TO LAUNCH BROWSER:', error);
     throw error;
   }
 }
@@ -55,7 +77,7 @@ export async function initBrowser() {
 }
 
 /**
- * Helper to convert image to Base64 for 100% reliable serverless embedding.
+ * Helper to convert image to Base64 for 100% reliable embedding.
  */
 function getBase64Image(filePath: string): string {
   try {
@@ -82,7 +104,7 @@ export async function generateProposalPDF(data: any): Promise<Buffer> {
     console.log('[PDF] Starting generation process...');
     browser = await getBrowser();
     page = await browser.newPage();
-    console.log('[PDF] Page successfully opened in serverless browser.');
+    console.log('[PDF] New page opened successfully.');
 
     page.setDefaultNavigationTimeout(30000);
     
@@ -94,11 +116,10 @@ export async function generateProposalPDF(data: any): Promise<Buffer> {
     
     let html = fs.readFileSync(templatePath, 'utf8');
 
-    // EMBED LOGO and BACKGROUND AS BASE64 (Removes filesystem dependency)
+    // EMBED LOGO and BACKGROUND AS BASE64
     const logoPath = path.resolve(__dirname, '../templates/assets/logo.png');
     const logoBase64 = getBase64Image(logoPath);
     if (logoBase64) {
-      // Look for any image tags with the logo placeholder
       html = html.replace(/src=["'][^"']*logo\.png["']/g, `src="${logoBase64}"`);
     }
 
@@ -132,24 +153,24 @@ export async function generateProposalPDF(data: any): Promise<Buffer> {
     `).join('');
     html = html.replace('{{commercialRows}}', commercialRows);
 
-    // Fallback basePath for any other relative assets
+    // Fallback basePath
     html = html.replace(/{{basePath}}/g, pathToFileURL(path.resolve(__dirname, '../templates/assets')).href);
     
     fs.writeFileSync(tempHtmlPath, html);
     await page.goto(pathToFileURL(tempHtmlPath).href, { waitUntil: 'load' });
-    console.log('[PDF] Proposal HTML loaded.');
+    console.log('[PDF] Template loaded.');
 
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
       margin: { top: '0', right: '0', bottom: '0', left: '0' }
     });
-    console.log('[PDF] Binary PDF Buffer generated.');
+    console.log('[PDF] PDF generation complete.');
 
     return Buffer.from(pdfBuffer);
 
   } catch (error) {
-    console.error('[PDF] GENERATION PROCESS FAILED:', error);
+    console.error('[PDF] GENERATION FAILED:', error);
     throw error;
   } finally {
     if (page) await page.close().catch(() => {});
