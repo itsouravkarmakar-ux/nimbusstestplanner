@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api.js';
 import { Sun, Lock, User as UserIcon, Loader2 } from 'lucide-react';
+import logo from '../assets/logo.png';
 
 const Register = () => {
   const [username, setUsername] = useState('');
@@ -21,7 +22,7 @@ const Register = () => {
     setLoading(true);
     setError('');
     try {
-      await axios.post('http://localhost:5000/api/auth/register', { username, password });
+      await api.post('/auth/register', { username, password });
       setSuccess('Registration successful! Redirecting to login...');
       setTimeout(() => navigate('/login'), 2000);
     } catch (err: any) {
@@ -35,7 +36,7 @@ const Register = () => {
     <div className="auth-bg">
       <div className="glass-card">
         <div style={{ textAlign: 'center', marginBottom: '30px' }}>
-          <img src="/src/assets/logo.png" alt="Nimbus Logo" style={{ height: '80px', marginBottom: '15px' }} />
+          <img src={logo} alt="Nimbus Logo" style={{ height: '80px', marginBottom: '15px' }} />
           <h1 style={{ fontSize: '24px', fontWeight: '700', letterSpacing: '0.5px' }}>Nimbus Solar Solutions</h1>
           <p style={{ opacity: 0.8, fontSize: '14px', marginTop: '5px' }}>Admin Registration</p>
         </div>

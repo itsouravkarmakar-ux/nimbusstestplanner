@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api.js';
 import { Save, Plus, Trash2, ArrowLeft, ArrowRight, Check, Loader2, MapPin, Zap, Clock, Package, DollarSign } from 'lucide-react';
 import Modal from '../components/Modal.js';
 
@@ -60,16 +60,8 @@ const ProposalForm = () => {
     setLoading(true);
     setLoadingStep('Initializing proposal data...');
     try {
-      const token = localStorage.getItem('token');
-      
-      setLoadingStep('Processing professional solar template...');
-      // Small artificial delay for visual feedback on the steps
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
       setLoadingStep('Generating high-resolution PDF pages...');
-      await axios.post('http://localhost:5000/api/proposals', formData, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      await api.post('/proposals', formData);
       
       setLoadingStep('Finalizing and saving to dashboard...');
       await new Promise(resolve => setTimeout(resolve, 500));

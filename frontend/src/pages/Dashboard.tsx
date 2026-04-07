@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api.js';
 import { FileText, Download, Plus, Search, Calendar, MapPin, User, LogOut, Loader2 } from 'lucide-react';
 import Modal from '../components/Modal.js';
 
@@ -27,10 +27,7 @@ const Dashboard = () => {
 
   const fetchProposals = async () => {
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:5000/api/proposals', {
-        headers: { Authorization: `Bearer ${token}` }
-      });
+      const response = await api.get('/proposals');
       setProposals(response.data);
     } catch (err) {
       console.error('Error fetching proposals', err);
@@ -42,7 +39,7 @@ const Dashboard = () => {
   const downloadPDF = async (id: string, filename: string) => {
     setDownloadingId(id);
     try {
-      const response = await axios.get(`http://localhost:5000/api/proposals/${id}/pdf`, {
+      const response = await api.get(`/proposals/${id}/pdf`, {
         responseType: 'blob'
       });
       const url = window.URL.createObjectURL(new Blob([response.data]));

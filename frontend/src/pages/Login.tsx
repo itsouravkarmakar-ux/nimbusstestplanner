@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import axios from 'axios';
+import api from '../services/api.js';
 import { Sun, Lock, User as UserIcon, Loader2 } from 'lucide-react';
 import logo from '../assets/logo.png';
 
@@ -16,7 +16,7 @@ const Login = () => {
     setLoading(true);
     setError('');
     try {
-      const response = await axios.post('http://localhost:5000/api/auth/login', { username, password });
+      const response = await api.post('/auth/login', { username, password });
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('username', response.data.username);
       navigate('/dashboard');
