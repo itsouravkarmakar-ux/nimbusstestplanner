@@ -3,7 +3,9 @@
   "framework": null,
   "functions": {
     "api/index.ts": {
-      "runtime": "@vercel/node"
+      "runtime": "@vercel/node",
+      "includeFiles": "backend/src/**",
+      "memory": 1024
     }
   },
   "rewrites": [
