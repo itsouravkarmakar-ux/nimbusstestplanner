@@ -230,3 +230,36 @@ body {
 .animate-pulse {
   animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .navbar {
+    padding: 10px 15px !important;
+  }
+  .navbar a {
+    font-size: 13px !important;
+    gap: 4px !important;
+  }
+  .navbar-welcome {
+    display: none !important;
+  }
+  .navbar img {
+    height: 30px !important;
+  }
+  .navbar div:first-child a {
+    font-size: 16px !important;
+  }
+  .navbar div:first-child span {
+    display: none;
+  }
+  
+  .dashboard-container {
+    padding: 0 15px;
+    margin: 20px auto;
+  }
+  
+  .history-grid {
+    grid-template-columns: 1fr;
+    gap: 15px;
+  }
+}

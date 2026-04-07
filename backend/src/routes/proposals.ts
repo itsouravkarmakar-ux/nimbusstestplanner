@@ -16,10 +16,9 @@ router.post('/', async (req, res) => {
     const proposalData = req.body;
     const proposal = new Proposal(proposalData);
     
-    // Use Mongoose's built-in validation before starting the expensive PDF process
+    // Mongoose validation
     const validationError = proposal.validateSync();
     if (validationError) {
-      console.error('Validation failed pre-PDF:', (validationError as any).errors);
       return res.status(400).json({ 
         message: 'Fill all required fields correctly', 
         errors: Object.keys((validationError as any).errors).map((key: string) => ({ 
@@ -29,37 +28,21 @@ router.post('/', async (req, res) => {
       });
     }
     
-    // Ensure uploads directory exists
-    const uploadsDir = path.join(__dirname, '../../uploads');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
+    // Generate PDF to Buffer (Vercel Fix)
+    console.log(`Generating serverless PDF for proposal: ${proposal.proposalRef}`);
+    const pdfBuffer = await generateProposalPDF(proposalData);
     
-    // Generate PDF
-    const proposalRefString = proposal.proposalRef || 'fallback';
-    const pdfFileName = `proposal_${proposalRefString.replace(/\//g, '_')}_${Date.now()}.pdf`;
-    const pdfPath = path.join(uploadsDir, pdfFileName);
-    
-    console.log(`Generating PDF for proposal: ${proposalRefString}`);
-    await generateProposalPDF(proposalData, pdfPath);
-    console.log(`PDF successfully generated: ${pdfFileName}`);
-    
-    proposal.pdfPath = pdfFileName;
+    // We can't save files to Vercel disk, so we'll store a placeholder in DB
+    // and regenerate on download for this basic version.
+    proposal.pdfPath = `proposal_${proposal.proposalRef}_READY`;
     proposal.status = 'generated';
     await proposal.save();
     
     res.status(201).json(proposal);
-  } catch (error) {
-    console.error('CRITICAL Error in proposal creation:');
-    console.error(error);
-    
-    // If it's a duplicate key error (code 11000)
-    if (error.code === 11000) {
-      return res.status(409).json({ message: 'A proposal with this Reference Number already exists. Please use a unique one.' });
-    }
-
+  } catch (error: any) {
+    console.error('PROPOSAL CREATION ERROR:', error);
     res.status(500).json({ 
-      message: error.name === 'ValidationError' ? 'Data validation failed' : 'Internal server error during PDF generation', 
+      message: 'Failed to generate PDF in production. Check logs.', 
       details: error.message 
     });
   }
@@ -72,12 +55,12 @@ router.get('/', async (req: Request, res: Response): Promise<void> => {
       .select('_id clientName proposalRef date location pdfPath status createdAt')
       .sort({ createdAt: -1 });
     res.json(proposals);
-  } catch (error) {
+  } catch (error: any) {
     res.status(500).json({ message: 'Error fetching proposals', error });
   }
 });
 
-// Download PDF
+// Download PDF (Streamed Binary)
 router.get('/:id/pdf', async (req: Request, res: Response): Promise<void> => {
   try {
     const proposal = await Proposal.findById(req.params.id);
@@ -86,32 +69,20 @@ router.get('/:id/pdf', async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
-    const uploadsDir = path.join(__dirname, '../../uploads');
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
+    // Regeneration Strategy for Serverless
+    // In a full production app, you'd use AWS S3, but for this fix, we regenerate to buffer.
+    console.log(`Regenerating PDF buffer for download: ${proposal.proposalRef}`);
+    const pdfBuffer = await generateProposalPDF(proposal);
+    
+    const fileName = `proposal_${(proposal.proposalRef || 'solar').replace(/\//g, '_')}.pdf`;
 
-    let filePath = proposal.pdfPath ? path.join(uploadsDir, proposal.pdfPath) : '';
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.send(pdfBuffer);
 
-    if (!filePath || !fs.existsSync(filePath)) {
-      // Regenerate the PDF if missing
-      const proposalRefString = proposal.proposalRef || 'fallback';
-      const pdfFileName = `proposal_${proposalRefString.replace(/\//g, '_')}_${Date.now()}.pdf`;
-      filePath = path.join(uploadsDir, pdfFileName);
-      
-      await generateProposalPDF(proposal, filePath);
-      
-      proposal.pdfPath = pdfFileName;
-      await Proposal.updateOne({ _id: proposal._id }, {
-        $set: { pdfPath: pdfFileName, status: 'generated' }
-      });
-      proposal.pdfPath = pdfFileName;
-    }
-
-    res.download(filePath);
-  } catch (error) {
-    console.error('Error downloading PDF:', error);
-    res.status(500).json({ message: 'Error downloading PDF', error });
+  } catch (error: any) {
+    console.error('PDF DOWNLOAD ERROR:', error);
+    res.status(500).json({ message: 'Could not generate/download PDF. Vercel timeout or Memory limit reached.', details: error.message });
   }
 });
 

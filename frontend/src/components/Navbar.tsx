@@ -32,7 +32,7 @@ const Navbar = () => {
         <div style={{ height: '24px', width: '1px', background: 'rgba(255,255,255,0.2)' }}></div>
         
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ textAlign: 'right' }}>
+          <div className="navbar-welcome" style={{ textAlign: 'right' }}>
             <div style={{ fontSize: '12px', opacity: 0.7 }}>Welcome,</div>
             <div style={{ fontSize: '14px', fontWeight: '600' }}>{username}</div>
           </div>
