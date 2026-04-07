@@ -6,10 +6,7 @@
     "api/index.ts": {
       "memory": 1024,
       "maxDuration": 60,
-      "includeFiles": [
-        "backend/src/**",
-        "backend/templates/**"
-      ]
+      "includeFiles": "backend/**"
     }
   },
   "rewrites": [
