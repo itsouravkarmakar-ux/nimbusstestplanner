@@ -1,5 +1,5 @@
 import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium-min';
+import chromium from '@sparticuz/chromium';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
@@ -12,43 +12,55 @@ const __dirname = path.dirname(__filename);
  * Launches a Chromium instance compatible with Vercel serverless environment.
  */
 async function getBrowser() {
-  console.log('Launching serverless browser...');
+  console.log('[PDF] Initializing chromium launch...');
   
-  // Vercel-specific executable path or local fallback
-  const executablePath = await chromium.executablePath('https://github.com/Sparticuz/chromium/releases/download/v132.0.0/chromium-v132.0.0-pack.tar');
-  
-  return await puppeteer.launch({
-    args: chromium.args,
-    defaultViewport: chromium.defaultViewport,
-    executablePath,
-    headless: chromium.headless,
-  });
+  try {
+    const executablePath = await chromium.executablePath();
+    console.log('[PDF] Chromium executable path resolved.');
+    
+    return await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath,
+      headless: chromium.headless,
+    });
+  } catch (error) {
+    console.error('[PDF] FAILED TO LAUNCH BROWSER:', error);
+    throw error;
+  }
 }
 
 /**
- * Dummy function for compatibility with existing calls
+ * Dummy function for compatibility
  */
 export async function initBrowser() {
   return Promise.resolve();
 }
 
 /**
- * Generates the PDF and returns it as a Buffer to avoid filesystem issues in production.
+ * Generates the PDF and returns it as a Buffer.
  */
 export async function generateProposalPDF(data: any): Promise<Buffer> {
   let browser = null;
   let page = null;
-  // Use OS tmp directory for the temporary HTML file (writable in Vercel)
   const tempHtmlPath = path.join(os.tmpdir(), `proposal_${Date.now()}.html`);
 
   try {
+    console.log('[PDF] Starting generation process...');
     browser = await getBrowser();
     page = await browser.newPage();
+    console.log('[PDF] New page opened.');
 
     page.setDefaultNavigationTimeout(30000);
     
-    // Read the template
+    // Find the template
     const templatePath = path.resolve(__dirname, '../templates/proposal_template.html');
+    console.log(`[PDF] Reading template from: ${templatePath}`);
+    
+    if (!fs.existsSync(templatePath)) {
+      throw new Error(`Template not found at: ${templatePath}. Contents of templates folder: ${fs.readdirSync(path.dirname(templatePath)).join(', ')}`);
+    }
+    
     let html = fs.readFileSync(templatePath, 'utf8');
 
     // Replace placeholders
@@ -80,29 +92,31 @@ export async function generateProposalPDF(data: any): Promise<Buffer> {
     `).join('');
     html = html.replace('{{commercialRows}}', commercialRows);
 
-    // Asset paths for production
-    html = html.replace(/{{basePath}}/g, pathToFileURL(path.resolve(__dirname, '../templates/assets')).href);
+    // Resolve asset path
+    const assetsPath = path.resolve(__dirname, '../templates/assets');
+    html = html.replace(/{{basePath}}/g, pathToFileURL(assetsPath).href);
     
-    // Write to tmp
     fs.writeFileSync(tempHtmlPath, html);
+    console.log(`[PDF] Temporary HTML written to: ${tempHtmlPath}`);
 
     await page.goto(pathToFileURL(tempHtmlPath).href, { waitUntil: 'load' });
+    console.log('[PDF] Page loaded.');
 
-    // Generate PDF to Buffer
     const pdfBuffer = await page.pdf({
       format: 'A4',
       printBackground: true,
       margin: { top: '0', right: '0', bottom: '0', left: '0' }
     });
+    console.log('[PDF] PDF Buffer generated successfully.');
 
     return Buffer.from(pdfBuffer);
 
   } catch (error) {
-    console.error('SERVERLESS PDF ERROR:', error);
+    console.error('[PDF] FATAL ERROR during generation:', error);
     throw error;
   } finally {
-    if (page) await page.close();
-    if (browser) await browser.close();
+    if (page) await page.close().catch(() => {});
+    if (browser) await browser.close().catch(() => {});
     if (fs.existsSync(tempHtmlPath)) {
       try { fs.unlinkSync(tempHtmlPath); } catch (e) {}
     }
