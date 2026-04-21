@@ -33,7 +33,7 @@ app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
 // Routes
 app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', environment: process.env.NODE_ENV, vercel: !!process.env.VERCEL });
+  res.json({ status: 'ok', version: '1.0.1-diag', environment: process.env.NODE_ENV, vercel: !!process.env.VERCEL });
 });
 app.use('/api/auth', authRoutes);
 app.use('/api/proposals', proposalRoutes);
