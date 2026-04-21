@@ -15,11 +15,17 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const MONGODB_URI = process.env.MONGODB_URI;
+let MONGODB_URI = process.env.MONGODB_URI;
 
-console.log('--- Server Starting ---');
-console.log(`Node Environment: ${process.env.NODE_ENV}`);
-console.log(`Target Port: ${PORT}`);
+// Production Fix: mongodb+srv URIs cannot have a port number. 
+// Some users accidentally include :27017 which causes connection failure on Vercel.
+if (MONGODB_URI && MONGODB_URI.startsWith('mongodb+srv://')) {
+  const originalURI = MONGODB_URI;
+  MONGODB_URI = MONGODB_URI.replace(/:[0-9]+(?=[/?]|$)/g, '');
+  if (originalURI !== MONGODB_URI) {
+    console.log('🔧 Sanitized MONGODB_URI (removed accidental port number)');
+  }
+}
 
 if (!MONGODB_URI) {
   console.error('FATAL: MONGODB_URI is not defined in environment variables');
