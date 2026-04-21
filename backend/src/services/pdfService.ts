@@ -20,9 +20,11 @@ export async function generateProposalPDF(data: any): Promise<Buffer> {
 
   // Load Montserrat Fonts
   const fontDir = path.resolve(__dirname, '../templates/assets/fonts');
+  console.log(`[PDF_GEN] Loading fonts from: ${fontDir}`);
   const regularFontBytes = fs.readFileSync(path.join(fontDir, 'Montserrat-Regular.ttf'));
   const boldFontBytes = fs.readFileSync(path.join(fontDir, 'Montserrat-Bold.ttf'));
   
+  console.log(`[PDF_GEN] Embedding fonts (Regular: ${regularFontBytes.length} bytes, Bold: ${boldFontBytes.length} bytes)`);
   const montserratRegular = await pdfDoc.embedFont(regularFontBytes);
   const montserratBold = await pdfDoc.embedFont(boldFontBytes);
 
