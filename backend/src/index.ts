@@ -17,13 +17,17 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 let MONGODB_URI = process.env.MONGODB_URI;
 
-// Production Fix: mongodb+srv URIs cannot have a port number. 
-// Some users accidentally include :27017 which causes connection failure on Vercel.
+// Standardized WHATWG URL API for secure URI handling
 if (MONGODB_URI && MONGODB_URI.startsWith('mongodb+srv://')) {
-  const originalURI = MONGODB_URI;
-  MONGODB_URI = MONGODB_URI.replace(/:[0-9]+(?=[/?]|$)/g, '');
-  if (originalURI !== MONGODB_URI) {
-    console.log('🔧 Sanitized MONGODB_URI (removed accidental port number)');
+  try {
+    const url = new URL(MONGODB_URI);
+    if (url.port) {
+      url.port = '';
+      MONGODB_URI = url.toString();
+      console.log('🔧 Sanitized MONGODB_URI using WHATWG URL API (removed accidental port)');
+    }
+  } catch (err) {
+    console.warn('⚠️  Could not parse MONGODB_URI with URL API, falling back to original string');
   }
 }
 

@@ -36,7 +36,12 @@ router.post('/login', async (req: Request, res: Response): Promise<void> => {
     }
     const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, { expiresIn: '1d' });
     res.json({ token, username: user.username });
-  } catch (error) {
+  } catch (error: any) {
+    console.error(`[AUTH_ERROR] Login failed for ${req.body?.username || 'unknown'}:`, {
+      message: error.message,
+      code: error.code,
+      dbState: mongoose.connection.readyState
+    });
     res.status(500).json({ message: 'Server error' });
   }
 });
