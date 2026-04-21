@@ -1,4 +1,5 @@
 import { Router, type Request, type Response } from 'express';
+import mongoose from 'mongoose';
 import jwt from 'jsonwebtoken';
 import User from '../models/User.js';
 import dotenv from 'dotenv';
