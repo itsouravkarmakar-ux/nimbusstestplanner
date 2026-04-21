@@ -50,12 +50,21 @@ app.use('/api/proposals', proposalRoutes);
 
 // Database Connection and Server Start
 console.log('Attempting to connect to MongoDB...');
-mongoose.connect(MONGODB_URI)
+mongoose.connect(MONGODB_URI, {
+  serverSelectionTimeoutMS: 10000, // Timeout after 10s instead of 30s
+  socketTimeoutMS: 45000,         // Close sockets after 45s of inactivity
+  family: 4                       // Force IPv4 to avoid some Atlas SRV issues on Vercel
+})
   .then(() => {
     console.log('✅ Success: Connected to MongoDB');
   })
   .catch((error) => {
-    console.error('❌ Error: MongoDB connection failed:', error.message);
+    console.error('❌ Error: MongoDB connection failed!');
+    console.error('--- Connection Error Details ---');
+    console.error('Message:', error.message);
+    if (error.code) console.error('Code:', error.code);
+    if (error.reason) console.error('Reason:', JSON.stringify(error.reason, null, 2));
+    console.error('--------------------------------');
     // We keep the server running so we can see the errors on requests
   });
 
