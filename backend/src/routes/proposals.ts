@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import Proposal from '../models/Proposal.js';
-import { generateHtmlProposalPDF as generateProposalPDF } from '../services/htmlPdfGenerator.js';
+import { generateProposalPDF } from '../services/pdfService.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
