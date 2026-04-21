@@ -11,12 +11,8 @@ const __dirname = path.dirname(__filename);
 const router = Router();
 
 // Diagnostic Route: Check environment integrity in production
-router.get('/diag', async (req, res) => {
-  try {
-    const templatesDir = path.resolve(__dirname, '../templates');
-    const templatePath = path.join(templatesDir, 'proposal_template.html');
-    const assetsDir = path.join(templatesDir, 'assets');
-    
+import mongoose from 'mongoose';
+...
     const diagReport = {
       cwd: process.cwd(),
       dirname: __dirname,
@@ -25,6 +21,7 @@ router.get('/diag', async (req, res) => {
       templatesFolderContents: fs.existsSync(templatesDir) ? fs.readdirSync(templatesDir) : 'FOLDER NOT FOUND',
       assetsFolderContents: fs.existsSync(assetsDir) ? fs.readdirSync(assetsDir) : 'FOLDER NOT FOUND',
       memoryUsage: process.memoryUsage(),
+      dbStatus: mongoose.connection.readyState, // 0: disconnected, 1: connected, 2: connecting, 3: disconnecting
       envVariables: {
         VERCEL: process.env.VERCEL,
         NODE_ENV: process.env.NODE_ENV,
