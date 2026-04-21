@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Sun, LogOut, FileText, LayoutDashboard } from 'lucide-react';
+import { LogOut, FileText, LayoutDashboard, Menu, X } from 'lucide-react';
 
 const Navbar = () => {
   const navigate = useNavigate();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const username = localStorage.getItem('username') || 'Admin';
 
   const handleLogout = () => {
@@ -12,54 +13,72 @@ const Navbar = () => {
     navigate('/login');
   };
 
+  const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
+
   return (
     <nav className="navbar">
       <div className="navbar-content">
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-          <img src="/logo.png" alt="Nimbus Logo" style={{ height: '40px' }} />
-          <Link to="/dashboard" style={{ textDecoration: 'none', color: 'white', fontWeight: '700', fontSize: '20px', letterSpacing: '0.5px' }}>
-            NIMBUS <span style={{ color: 'var(--primary)' }}>SOLAR SOLUTIONS</span>
+          <img src="/logo.png" alt="Nimbus Logo" className="navbar-logo" />
+          <Link to="/dashboard" className="navbar-brand">
+            NIMBUS <span className="brand-suffix">SOLAR SOLUTIONS</span>
           </Link>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: '25px' }}>
-          <Link to="/dashboard" style={{ color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '500' }}>
+        {/* Desktop Navigation */}
+        <div className="nav-links-desktop">
+          <Link to="/dashboard" className="nav-link">
             <LayoutDashboard size={18} /> Dashboard
           </Link>
-          <Link to="/new-proposal" style={{ color: 'white', textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '6px', fontSize: '14px', fontWeight: '500' }}>
+          <Link to="/new-proposal" className="nav-link">
             <FileText size={18} /> New Proposal
           </Link>
           
-          <div style={{ height: '24px', width: '1px', background: 'rgba(255,255,255,0.2)' }}></div>
+          <div className="nav-divider"></div>
           
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div className="navbar-welcome" style={{ textAlign: 'right' }}>
+            <div className="navbar-welcome">
               <div style={{ fontSize: '12px', opacity: 0.7 }}>Welcome,</div>
               <div style={{ fontSize: '14px', fontWeight: '600' }}>{username}</div>
             </div>
             <button 
               onClick={handleLogout}
-              style={{ 
-                background: 'rgba(255,255,255,0.1)', 
-                border: 'none', 
-                color: 'white', 
-                padding: '8px', 
-                borderRadius: '8px', 
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                transition: 'all 0.2s'
-              }}
+              className="logout-btn"
               title="Logout"
-              onMouseOver={(e) => e.currentTarget.style.background = 'rgba(239, 68, 68, 0.2)'}
-              onMouseOut={(e) => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
             >
               <LogOut size={18} />
             </button>
           </div>
         </div>
+
+        {/* Mobile Menu Toggle */}
+        <button className="mobile-menu-toggle" onClick={toggleMenu}>
+          {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+        </button>
       </div>
+
+      {/* Mobile Navigation Dropdown */}
+      {isMenuOpen && (
+        <div className="nav-links-mobile">
+          <Link to="/dashboard" className="nav-link-mobile" onClick={() => setIsMenuOpen(false)}>
+            <LayoutDashboard size={20} /> Dashboard
+          </Link>
+          <Link to="/new-proposal" className="nav-link-mobile" onClick={() => setIsMenuOpen(false)}>
+            <FileText size={20} /> New Proposal
+          </Link>
+          <div className="nav-divider-mobile"></div>
+          <div className="navbar-welcome-mobile">
+            <div style={{ fontSize: '12px', opacity: 0.7 }}>Logged in as</div>
+            <div style={{ fontSize: '16px', fontWeight: '600' }}>{username}</div>
+          </div>
+          <button 
+            onClick={handleLogout}
+            className="logout-btn-mobile"
+          >
+            <LogOut size={20} /> Sign Out
+          </button>
+        </div>
+      )}
     </nav>
   );
 };
