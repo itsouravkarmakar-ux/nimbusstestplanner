@@ -65,71 +65,185 @@ export async function generateProposalPDF(data: any): Promise<Buffer> {
 
   // --- Page 1 (Cover) ---
   const p1 = await drawPageBase(1);
+  p1.drawText(data.companyName || '', {
+    x: getX(9),
+    y: getY(8),
+    size: 14,
+    font: montserratBold,
+    color: rgb(0.1, 0.23, 0.35),
+  });
   p1.drawText(data.clientName || 'CLIENT NAME', {
     x: getX(9),
     y: getY(11.5),
     size: 18,
     font: montserratBold,
-    color: rgb(0.1, 0.23, 0.35), // #1a3a5a
+    color: rgb(0.1, 0.23, 0.35),
   });
-
-  // --- Page 2 (Site Info) ---
-  const p2 = await drawPageBase(2);
-  p2.drawText(data.location || '', {
-    x: getX(22),
-    y: getY(33.4),
-    size: 11,
-    font: montserratRegular,
-    color: rgb(0, 0.29, 0.68),
-  });
-  p2.drawText(`${data.capacity || ''} KWp Solar Power Plant using TOPCON modules.`, {
-    x: getX(20),
-    y: getY(37.4),
+  p1.drawText(data.address || '', {
+    x: getX(9),
+    y: getY(14.5),
     size: 10,
     font: montserratRegular,
+    color: rgb(0.1, 0.23, 0.35),
+  });
+
+  // --- Page 2 (Project Description) ---
+  const p2 = await drawPageBase(2);
+  p2.drawText(`${data.capacity || ''} KWp`, {
+    x: getX(42),
+    y: getY(33.4),
+    size: 11,
+    font: montserratBold,
     color: rgb(0, 0.29, 0.68),
   });
-  p2.drawText(data.completionTime || '', {
-    x: getX(33),
-    y: getY(45.1),
+  
+  const techText = `${data.installationType || ''} - ${data.moduleWp || ''} Wp`;
+  p2.drawText(techText, {
+    x: getX(42),
+    y: getY(37.4),
     size: 11,
     font: montserratRegular,
     color: rgb(0, 0.29, 0.68),
   });
 
-  // --- Page 3 ---
-  await drawPageBase(3);
+  const strucText = (data.structureType || []).join(', ');
+  p2.drawText(strucText || 'N/A', {
+    x: getX(42),
+    y: getY(41.4),
+    size: 11,
+    font: montserratRegular,
+    color: rgb(0, 0.29, 0.68),
+  });
 
-  // --- Page 4 (BOM Table) ---
+  p2.drawText(data.enableOpex ? 'Yes' : 'No', {
+    x: getX(42),
+    y: getY(45.4),
+    size: 11,
+    font: montserratRegular,
+    color: rgb(0, 0.29, 0.68),
+  });
+
+  p2.drawText(`₹${data.perKwpCost || 0} (GST: ${data.gstPercentage || 0}%)`, {
+    x: getX(42),
+    y: getY(50.4),
+    size: 11,
+    font: montserratRegular,
+    color: rgb(0, 0.29, 0.68),
+  });
+
+  // --- Page 3 (Project Calculation) ---
+  const p3 = await drawPageBase(3);
+  p3.drawText(`₹${(data.projectCost || 0).toLocaleString()}`, {
+    x: getX(50),
+    y: getY(45),
+    size: 24,
+    font: montserratBold,
+    color: rgb(0, 0.29, 0.68),
+  });
+
+  // --- Page 4 (Payment Terms) ---
   const p4 = await drawPageBase(4);
-  // Drawing rows manually since tables aren't native to pdf-lib
-  let startY = getY(13.8);
-  const rowHeight = 25.5; 
-  (data.bom || []).slice(0, 18).forEach((item: any, i: number) => {
-    const currentY = startY - (i * rowHeight);
-    p4.drawText(item.item || '', { x: getX(10), y: currentY, size: 9, font: montserratRegular });
-    p4.drawText(item.description || '', { x: getX(30), y: currentY, size: 8, font: montserratRegular });
-    p4.drawText(`${item.quantity || ''} ${item.unit || ''}`, { x: getX(80), y: currentY, size: 9, font: montserratRegular });
+  let termY = getY(25);
+  (data.paymentTerms || []).forEach((term: any, i: number) => {
+    const currentY = termY - (i * 35);
+    p4.drawText(term.milestone || '', { x: getX(20), y: currentY, size: 10, font: montserratRegular });
+    p4.drawText(`${term.percentage || 0}%`, { x: getX(70), y: currentY, size: 12, font: montserratBold });
   });
 
-  // --- Pages 5 & 6 ---
-  await drawPageBase(5);
-  await drawPageBase(6);
+  // --- Page 5 (Carbon Footprint) ---
+  const p5 = await drawPageBase(5);
+  p5.drawText(`${(data.carbonFootprint || 0).toLocaleString()} Units/Year`, {
+    x: getX(50),
+    y: getY(45),
+    size: 24,
+    font: montserratBold,
+    color: rgb(0.02, 0.58, 0.41), // Greenish
+  });
 
-  // --- Page 7 (Commercials) ---
+  // --- Page 6 (Opex Details) ---
+  const p6 = await drawPageBase(6);
+  if (data.opexDetails) {
+    p6.drawText(data.opexDetails, {
+      x: getX(10),
+      y: getY(20),
+      size: 10,
+      font: montserratRegular,
+      maxWidth: getX(80),
+      lineHeight: 14,
+    });
+  }
+
+  // --- Page 7 (Array Image) ---
   const p7 = await drawPageBase(7);
-  let commY = getY(23.5);
-  (data.commercials || []).slice(0, 8).forEach((item: any, i: number) => {
-    const currentY = commY - (i * 30);
-    p7.drawText(item.milestone || '', { x: getX(20), y: currentY, size: 10, font: montserratRegular });
-    p7.drawText(`${item.percentage || ''}%`, { x: getX(50), y: currentY, size: 10, font: montserratBold });
-    p7.drawText(item.description || '', { x: getX(65), y: currentY, size: 9, font: montserratRegular });
+  if (data.arrayAttachment) {
+    try {
+      const base64Data = data.arrayAttachment.split(',')[1];
+      const imageBytes = Buffer.from(base64Data, 'base64');
+      let embeddedImg;
+      if (data.arrayAttachment.includes('image/png')) {
+        embeddedImg = await pdfDoc.embedPng(imageBytes);
+      } else {
+        embeddedImg = await pdfDoc.embedJpg(imageBytes);
+      }
+      
+      p7.drawImage(embeddedImg, {
+        x: getX(10),
+        y: getY(80),
+        width: getX(80),
+        height: getY(20) - getY(80), // Area from 20% to 80%? No, getY works differently.
+      });
+      // Correcting height/y for image:
+      // If we want it in the middle:
+      const imgDims = embeddedImg.scaleToFit(getX(80), 400);
+      p7.drawImage(embeddedImg, {
+        x: getX(50) - imgDims.width / 2,
+        y: getY(50) - imgDims.height / 2,
+        width: imgDims.width,
+        height: imgDims.height,
+      });
+    } catch (err) {
+      console.error('Error embedding array image:', err);
+    }
+  }
+
+  // --- Page 8 (Feasibility) ---
+  const p8 = await drawPageBase(8);
+  
+  // Header for Technical Data
+  p8.drawText('Technical Feasibility Overview', { x: getX(10), y: getY(20), size: 14, font: montserratBold, color: rgb(0.1, 0.23, 0.35) });
+
+  const feasYStart = 26;
+  const feasLineHeight = 25;
+  const feasFields = [
+    { label: 'System Size:', value: `${data.feasibilitySystemSize || 0} kWp` },
+    { label: 'Per kW Costing:', value: `₹${(data.feasibilityCosting || 0).toLocaleString()}` },
+    { label: 'Electric Tariff (Current):', value: `₹${data.feasibilityTariff || 0}/Unit` },
+    { label: 'Units Generated:', value: `${(data.feasibilityUnitGenerated || 0).toLocaleString()} Units` },
+  ];
+
+  feasFields.forEach((field, i) => {
+    const yPos = getY(feasYStart + (i * 4)); // Using 4% vertical gap
+    p8.drawText(field.label, { x: getX(10), y: yPos, size: 11, font: montserratBold });
+    p8.drawText(field.value, { x: getX(40), y: yPos, size: 11, font: montserratRegular });
   });
 
-  // --- Pages 8 to 16 ---
-  for (let i = 8; i <= 16; i++) {
+  if (data.feasibilityDetails) {
+    p8.drawText('Report Summary / Notes:', { x: getX(10), y: getY(50), size: 12, font: montserratBold });
+    p8.drawText(data.feasibilityDetails, {
+      x: getX(10),
+      y: getY(54),
+      size: 10,
+      font: montserratRegular,
+      maxWidth: getX(80),
+      lineHeight: 14,
+    });
+  }
+
+  // --- Pages 9 to 16 ---
+  for (let i = 9; i <= 16; i++) {
     await drawPageBase(i);
   }
+
 
   const pdfBytes = await pdfDoc.save();
   return Buffer.from(pdfBytes);

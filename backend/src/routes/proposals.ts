@@ -1,6 +1,6 @@
 import { Router, type Request, type Response } from 'express';
 import Proposal from '../models/Proposal.js';
-import { generateProposalPDF } from '../services/pdfService.js';
+import { generateHtmlProposalPDF as generateProposalPDF } from '../services/htmlPdfGenerator.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
@@ -46,6 +46,7 @@ router.post('/', async (req, res) => {
     
     const validationError = proposal.validateSync();
     if (validationError) {
+      console.error('[PROPOSAL] Validation failed:', validationError.errors);
       return res.status(400).json({ 
         message: 'Validation failed', 
         errors: (validationError as any).errors 
@@ -70,13 +71,38 @@ router.post('/', async (req, res) => {
   }
 });
 
-// Get proposal history
+// Get proposal history with pagination and search
 router.get('/', async (req: Request, res: Response): Promise<void> => {
   try {
-    const proposals = await Proposal.find()
+    const page = parseInt(req.query.page as string) || 1;
+    const limit = parseInt(req.query.limit as string) || 10;
+    const search = req.query.search as string;
+    const skip = (page - 1) * limit;
+
+    let query: any = {};
+    if (search) {
+      query = {
+        $or: [
+          { clientName: { $regex: search, $options: 'i' } },
+          { proposalRef: { $regex: search, $options: 'i' } },
+          { location: { $regex: search, $options: 'i' } }
+        ]
+      };
+    }
+
+    const total = await Proposal.countDocuments(query);
+    const proposals = await Proposal.find(query)
       .select('_id clientName proposalRef date location pdfPath status createdAt')
-      .sort({ createdAt: -1 });
-    res.json(proposals);
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    res.json({
+      proposals,
+      total,
+      page,
+      totalPages: Math.ceil(total / limit)
+    });
   } catch (error) {
     res.status(500).json({ message: 'Error fetching proposals', error });
   }

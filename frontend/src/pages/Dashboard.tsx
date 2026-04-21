@@ -16,24 +16,50 @@ interface Proposal {
 const Dashboard = () => {
   const [proposals, setProposals] = useState<Proposal[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
   const [modal, setModal] = useState({ isOpen: false, title: '', message: '', type: 'info' as 'error' | 'success' | 'info' });
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchProposals();
-  }, []);
+    // Reset and fetch when search term changes (with debounce)
+    const delayDebounceFn = setTimeout(() => {
+      setPage(1);
+      fetchProposals(1, searchTerm, true);
+    }, 500);
 
-  const fetchProposals = async () => {
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchTerm]);
+
+  const fetchProposals = async (pageNum: number, search: string, reset: boolean = false) => {
+    if (reset) setLoading(true);
+    else setLoadingMore(true);
+
     try {
-      const response = await api.get('/proposals');
-      setProposals(response.data);
+      const response = await api.get(`/proposals?page=${pageNum}&limit=10&search=${search}`);
+      const { proposals: newProposals, total: totalCount } = response.data;
+      
+      if (reset) {
+        setProposals(newProposals);
+      } else {
+        setProposals(prev => [...prev, ...newProposals]);
+      }
+      setTotal(totalCount);
     } catch (err) {
       console.error('Error fetching proposals', err);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
+  };
+
+  const handleLoadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchProposals(nextPage, searchTerm);
   };
 
   const downloadPDF = async (id: string, filename: string) => {
@@ -61,16 +87,7 @@ const Dashboard = () => {
     }
   };
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('username');
-    navigate('/login');
-  };
-
-  const filteredProposals = proposals.filter(p => 
-    (p.clientName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (p.proposalRef || '').toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const hasMore = proposals.length < total;
 
   return (
     <div className="dashboard-container">
@@ -100,64 +117,79 @@ const Dashboard = () => {
           <Loader2 className="animate-spin" size={40} color="var(--primary)" />
         </div>
       ) : (
-        <div className="history-grid">
-          {filteredProposals.length > 0 ? filteredProposals.map(proposal => (
-            <div key={proposal._id} className="proposal-card">
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
-                  <div style={{ background: 'rgba(255, 204, 0, 0.1)', padding: '10px', borderRadius: '10px' }}>
-                    <FileText color="var(--primary)" size={24} />
+        <>
+          <div className="history-grid">
+            {proposals.length > 0 ? proposals.map(proposal => (
+              <div key={proposal._id} className="proposal-card">
+                <div>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '15px' }}>
+                    <div style={{ background: 'rgba(255, 204, 0, 0.1)', padding: '10px', borderRadius: '10px' }}>
+                      <FileText color="var(--primary)" size={24} />
+                    </div>
+                    <span className="badge badge-success">Generated</span>
                   </div>
-                  <span className="badge badge-success">Generated</span>
+                  <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--secondary)', marginBottom: '5px' }}>{proposal.clientName}</h3>
+                  <p style={{ fontSize: '13px', color: '#666', marginBottom: '15px' }}>Ref: {proposal.proposalRef}</p>
+                  
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#555' }}>
+                      <MapPin size={14} color="#999" /> {proposal.location}
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#555' }}>
+                      <Calendar size={14} color="#999" /> {new Date(proposal.date).toLocaleDateString()}
+                    </div>
+                  </div>
                 </div>
-                <h3 style={{ fontSize: '18px', fontWeight: '700', color: 'var(--secondary)', marginBottom: '5px' }}>{proposal.clientName}</h3>
-                <p style={{ fontSize: '13px', color: '#666', marginBottom: '15px' }}>Ref: {proposal.proposalRef}</p>
-                
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '20px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#555' }}>
-                    <MapPin size={14} color="#999" /> {proposal.location}
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13px', color: '#555' }}>
-                    <Calendar size={14} color="#999" /> {new Date(proposal.date).toLocaleDateString()}
-                  </div>
-                </div>
-              </div>
 
+                <button 
+                  onClick={() => downloadPDF(proposal._id, (proposal.proposalRef || 'proposal').replace(/\//g, '_'))}
+                  disabled={downloadingId === proposal._id}
+                  style={{ 
+                    width: '100%', 
+                    padding: '10px', 
+                    borderRadius: '10px', 
+                    background: downloadingId === proposal._id ? '#e2e8f0' : '#f0f4f8', 
+                    border: '1px solid #d1d5db', 
+                    color: 'var(--secondary)',
+                    fontWeight: '600',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    cursor: downloadingId === proposal._id ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  onMouseOver={(e) => { if (downloadingId !== proposal._id) e.currentTarget.style.background = '#e2e8f0'; }}
+                  onMouseOut={(e) => { if (downloadingId !== proposal._id) e.currentTarget.style.background = '#f0f4f8'; }}
+                >
+                  {downloadingId === proposal._id ? (
+                    <><Loader2 className="animate-spin" size={16} /> Preparing...</>
+                  ) : (
+                    <><Download size={16} /> Download PDF</>
+                  )}
+                </button>
+              </div>
+            )) : (
+              <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '100px', background: 'white', borderRadius: '20px', color: '#999' }}>
+                <FileText size={48} style={{ opacity: 0.2, marginBottom: '15px' }} />
+                <p>No proposals found.</p>
+              </div>
+            )}
+          </div>
+
+          {hasMore && (
+            <div style={{ display: 'flex', justifyContent: 'center', marginTop: '40px' }}>
               <button 
-                onClick={() => downloadPDF(proposal._id, (proposal.proposalRef || 'proposal').replace(/\//g, '_'))}
-                disabled={downloadingId === proposal._id}
-                style={{ 
-                  width: '100%', 
-                  padding: '10px', 
-                  borderRadius: '10px', 
-                  background: downloadingId === proposal._id ? '#e2e8f0' : '#f0f4f8', 
-                  border: '1px solid #d1d5db', 
-                  color: 'var(--secondary)',
-                  fontWeight: '600',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: '8px',
-                  cursor: downloadingId === proposal._id ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s'
-                }}
-                onMouseOver={(e) => { if (downloadingId !== proposal._id) e.currentTarget.style.background = '#e2e8f0'; }}
-                onMouseOut={(e) => { if (downloadingId !== proposal._id) e.currentTarget.style.background = '#f0f4f8'; }}
+                onClick={handleLoadMore} 
+                disabled={loadingMore}
+                className="btn-primary"
+                style={{ background: 'white', color: 'var(--primary)', border: '2px solid var(--primary)' }}
               >
-                {downloadingId === proposal._id ? (
-                  <><Loader2 className="animate-spin" size={16} /> Preparing...</>
-                ) : (
-                  <><Download size={16} /> Download PDF</>
-                )}
+                {loadingMore ? <Loader2 className="animate-spin" size={20} /> : 'Load More Proposals'}
               </button>
             </div>
-          )) : (
-            <div style={{ gridColumn: '1/-1', textAlign: 'center', padding: '100px', background: 'white', borderRadius: '20px', color: '#999' }}>
-              <FileText size={48} style={{ opacity: 0.2, marginBottom: '15px' }} />
-              <p>No proposals found.</p>
-            </div>
           )}
-        </div>
+        </>
       )}
       <Modal 
         isOpen={modal.isOpen} 

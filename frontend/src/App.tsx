@@ -7,18 +7,24 @@ import ProposalForm from './pages/ProposalForm.js';
 import ResetPassword from './pages/ResetPassword.js';
 import Navbar from './components/Navbar.js';
 
-const PrivateRoute = ({ children }: { children: React.ReactNode }) => {
+const AuthLayout = ({ children }: { children: React.ReactNode }) => {
   const token = localStorage.getItem('token');
-  return token ? <>{children}</> : <Navigate to="/login" />;
+  if (!token) return <Navigate to="/login" />;
+  
+  return (
+    <>
+      <Navbar />
+      <div className="main-content">
+        {children}
+      </div>
+    </>
+  );
 };
 
 function App() {
-  const token = localStorage.getItem('token');
-
   return (
     <Router>
       <div className="app">
-        {token && <Navbar />}
         <Routes>
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
@@ -26,17 +32,17 @@ function App() {
           <Route 
             path="/dashboard" 
             element={
-              <PrivateRoute>
+              <AuthLayout>
                 <Dashboard />
-              </PrivateRoute>
+              </AuthLayout>
             } 
           />
           <Route 
             path="/new-proposal" 
             element={
-              <PrivateRoute>
+              <AuthLayout>
                 <ProposalForm />
-              </PrivateRoute>
+              </AuthLayout>
             } 
           />
           <Route path="/" element={<Navigate to="/dashboard" />} />
