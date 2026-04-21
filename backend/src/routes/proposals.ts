@@ -4,6 +4,7 @@ import { generateProposalPDF } from '../services/pdfService.js';
 import path from 'path';
 import fs from 'fs';
 import { fileURLToPath } from 'url';
+import mongoose from 'mongoose';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -11,8 +12,12 @@ const __dirname = path.dirname(__filename);
 const router = Router();
 
 // Diagnostic Route: Check environment integrity in production
-import mongoose from 'mongoose';
-...
+router.get('/diag', async (req, res) => {
+  try {
+    const templatesDir = path.resolve(__dirname, '../templates');
+    const templatePath = path.join(templatesDir, 'proposal_template.html');
+    const assetsDir = path.join(templatesDir, 'assets');
+    
     const diagReport = {
       cwd: process.cwd(),
       dirname: __dirname,
@@ -21,6 +26,7 @@ import mongoose from 'mongoose';
       templatesFolderContents: fs.existsSync(templatesDir) ? fs.readdirSync(templatesDir) : 'FOLDER NOT FOUND',
       assetsFolderContents: fs.existsSync(assetsDir) ? fs.readdirSync(assetsDir) : 'FOLDER NOT FOUND',
       memoryUsage: process.memoryUsage(),
+      dbConnected: mongoose.connection.readyState === 1,
       dbStatus: mongoose.connection.readyState, // 0: disconnected, 1: connected, 2: connecting, 3: disconnecting
       envVariables: {
         VERCEL: process.env.VERCEL,
